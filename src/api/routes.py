@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 import uuid
 from typing import Any
 
@@ -7,7 +8,8 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from ..guardrails.base import CheckContext
-from ..observability.logger import log_request
+from ..observability.logger import log_error, log_request
+from ..observability.metrics import record_block, record_guardrail, record_llm_call, record_request
 
 
 router = APIRouter()
@@ -45,6 +47,13 @@ def _serialize_results(results) -> list[dict]:
     ]
 
 
+def _emit_guardrail_metrics(results, pipeline: str) -> None:
+    for r in results:
+        record_guardrail(r.name, r.severity, r.latency_ms)
+        if r.blocked:
+            record_block(r.name, pipeline)
+
+
 @router.post("/v1/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest, request: Request):
     shield = request.app.state.shield
@@ -63,6 +72,7 @@ async def chat(req: ChatRequest, request: Request):
     )
 
     input_result = await shield.input_pipeline.run(req.message, ctx)
+    _emit_guardrail_metrics(input_result.results, "input")
 
     audit: dict[str, Any] = {
         "request_id": request_id,
@@ -74,7 +84,8 @@ async def chat(req: ChatRequest, request: Request):
     }
 
     if input_result.blocked:
-        audit["final_decision"] = "block"
+        audit["final_decision"] = "block_input"
+        record_request(req.policy, "block_input")
         log_request(audit)
         return ChatResponse(
             reply="",
@@ -85,14 +96,24 @@ async def chat(req: ChatRequest, request: Request):
             output_results=[],
         )
 
-    reply = await shield.llm.complete(req.message, system=req.system)
+    t0 = time.perf_counter()
+    try:
+        reply = await shield.llm.complete(req.message, system=req.system)
+    except Exception as exc:
+        log_error("llm_call_failed", exc, {"request_id": request_id})
+        raise HTTPException(status_code=502, detail="LLM call failed")
+    finally:
+        record_llm_call((time.perf_counter() - t0) * 1000)
 
     output_result = await shield.output_pipeline.run(reply, ctx)
+    _emit_guardrail_metrics(output_result.results, "output")
+
     audit["llm_called"] = True
     audit["output_results"] = _serialize_results(output_result.results)
 
     if output_result.blocked:
         audit["final_decision"] = "block_output"
+        record_request(req.policy, "block_output")
         log_request(audit)
         return ChatResponse(
             reply="",
@@ -104,6 +125,7 @@ async def chat(req: ChatRequest, request: Request):
         )
 
     audit["final_decision"] = "pass"
+    record_request(req.policy, "pass")
     log_request(audit)
 
     return ChatResponse(

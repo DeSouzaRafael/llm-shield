@@ -8,10 +8,10 @@ from ..llm.client import LLMClient
 
 
 class AppState:
-    def __init__(self, policies_dir: Path) -> None:
+    def __init__(self, policies_dir: Path, default_policy: str = "balanced") -> None:
         self.loader = PolicyLoader(policies_dir)
         self.llm = LLMClient()
-        self._active: str = "balanced"
+        self._active: str = default_policy
         self._input: Pipeline
         self._output: Pipeline
         self._load(self._active)

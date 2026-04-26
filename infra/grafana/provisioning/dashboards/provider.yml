@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: llm-shield
+    folder: llm-shield
+    type: file
+    options:
+      path: /etc/grafana/provisioning/dashboards
