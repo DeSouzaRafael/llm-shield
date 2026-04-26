@@ -103,7 +103,7 @@ Three prebuilt policies ship with the project: `strict`, `balanced`, and `permis
 | 2 | Core interfaces, pipeline, base API | done |
 | 3 | Input guardrails (PII, injection, topic, length) | done |
 | 4 | Output guardrails (redaction, toxicity, format, hallucination) | done |
-| 5 | Policy system + runtime switching | planned |
+| 5 | Policy system + runtime switching | done |
 | 6 | Observability (structured logs, Prometheus, Grafana) | planned |
 | 7 | Benchmark vs NeMo / Guardrails AI / Llama Guard | planned |
 | 8 | Portfolio polish (diagrams, demo, write-up) | planned |

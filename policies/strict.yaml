@@ -1,3 +1,32 @@
 name: strict
-input: []
-output: []
+input:
+  - type: length_check
+    max_chars: 4000
+    max_tokens: 1000
+  - type: pii_detector
+    severity_on_detect: block
+    entities: [email, cpf, credit_card, phone_br, rg]
+  - type: prompt_injection
+    threshold: 0.70
+  - type: topic_classifier
+    threshold: 0.65
+    blocked_topics:
+      - violence
+      - self-harm
+      - illegal activity
+      - hate speech
+      - adult content
+      - weapons
+      - drug use
+output:
+  - type: pii_redactor
+    mode: mask
+    entities: [email, cpf, credit_card, phone_br, rg]
+  - type: toxicity_filter
+    threshold: 0.60
+    severity_on_detect: block
+  - type: format_validator
+    require_json: false
+  - type: hallucination_check
+    threshold: 0.40
+    min_sentences: 1
