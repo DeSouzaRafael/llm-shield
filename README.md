@@ -99,9 +99,9 @@ Three prebuilt policies ship with the project: `strict`, `balanced`, and `permis
 
 | Phase | Scope | Status |
 |-------|-------|--------|
-| 1 | Architecture design + execution model | planned |
-| 2 | Core interfaces, pipeline, base API | planned |
-| 3 | Input guardrails (PII, injection, topic, length) | planned |
+| 1 | Architecture design + execution model | done |
+| 2 | Core interfaces, pipeline, base API | done |
+| 3 | Input guardrails (PII, injection, topic, length) | in progress |
 | 4 | Output guardrails (redaction, toxicity, format, hallucination) | planned |
 | 5 | Policy system + runtime switching | planned |
 | 6 | Observability (structured logs, Prometheus, Grafana) | planned |
