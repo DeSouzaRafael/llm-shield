@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import sys
+import time
 from typing import Any
 
 
@@ -21,4 +22,14 @@ _logger = _setup()
 
 
 def log_request(data: dict[str, Any]) -> None:
-    _logger.info(json.dumps(data, default=str))
+    _logger.info(json.dumps({**data, "ts": time.time()}, default=str))
+
+
+def log_error(event: str, error: Exception, extra: dict[str, Any] | None = None) -> None:
+    _logger.error(json.dumps({
+        "event": event,
+        "error": type(error).__name__,
+        "detail": str(error),
+        "ts": time.time(),
+        **(extra or {}),
+    }, default=str))
